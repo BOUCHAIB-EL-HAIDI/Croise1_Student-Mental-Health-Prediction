@@ -1,0 +1,19 @@
+
+# Data manipulation
+numpy>=2.0,<3.0
+pandas>=2.2,<4.0
+
+# Data visualization
+matplotlib>=3.9,<4.0
+seaborn>=0.13,<1.0
+
+# Machine Learning
+scikit-learn>=1.6,<2.0
+joblib>=1.4,<2.0
+
+# Jupyter notebooks
+jupyterlab>=4.3,<5.0
+ipykernel>=6.29,<8.0
+
+# Interactive application
+streamlit>=1.40,<2.0

@@ -1,0 +1,39 @@
+
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: student-mental-health-airflow
+
+    command: standalone
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      PYTHONPATH: /opt/airflow
+
+    volumes:
+      # Airflow DAGs
+      - ./dags:/opt/airflow/dags
+
+      # Your Python source code
+      - ./src:/opt/airflow/src
+
+      # Project data
+      - ./data:/opt/airflow/data
+
+      # Saved models
+      - ./models:/opt/airflow/models
+
+      # Generated reports
+      - ./reports:/opt/airflow/reports
+
+      # Airflow logs
+      - ./airflow/logs:/opt/airflow/logs
+
+    restart: unless-stopped

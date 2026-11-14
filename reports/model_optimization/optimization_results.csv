@@ -1,0 +1,4 @@
+Model,Best F1-Score,Best Parameters
+SVM,0.754576250626274,"{'classifier__C': 0.1, 'classifier__class_weight': None, 'classifier__gamma': 'scale', 'classifier__kernel': 'linear'}"
+Logistic Regression,0.7494127117970522,"{'classifier__C': 10, 'classifier__class_weight': None}"
+Random Forest,0.6856975834748699,"{'classifier__max_depth': 10, 'classifier__max_features': 'sqrt', 'classifier__min_samples_leaf': 1, 'classifier__min_samples_split': 5, 'classifier__n_estimators': 300}"

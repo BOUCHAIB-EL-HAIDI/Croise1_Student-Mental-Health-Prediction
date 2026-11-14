@@ -1,6 +1,10 @@
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0 , str(PROJECT_ROOT))
 
 import pandas as pd
-from data_loader import load_dataset
+from src.data.data_loader import load_dataset
 
 
 TARGET = "Mental_Health_Risk"
@@ -41,19 +45,24 @@ def analyze_data_quality(df):
         print(df["Student_ID"].duplicated().sum())
 
     print("\n--- Unique Categorical Values ---")
-    for column in df.select_dtypes(include="object").columns:
+    categorical_columns = df.select_dtypes(include="object").columns.drop(
+        "Student_ID", errors="ignore"
+    )
+
+    for column in categorical_columns:
         print(f"\n{column}:")
         print(df[column].value_counts(dropna=False))
 
 
 def analyze_statistics(df):
     print("\n--- Numerical Statistics ---")
-    print(df.describe())
+    print(df.describe().round(2))
 
     print("\n--- Categorical Statistics ---")
     print(df.describe(include="object"))
 
     print("\n--- Potential Outliers (IQR) ---")
+
     numerical_columns = df.select_dtypes(include="number").columns.drop(
         "Student_ID", errors="ignore"
     )
@@ -66,12 +75,24 @@ def analyze_statistics(df):
         lower_bound = Q1 - 1.5 * IQR
         upper_bound = Q3 + 1.5 * IQR
 
-        outliers = df[
+        outliers = df.loc[
             (df[column] < lower_bound) |
-            (df[column] > upper_bound)
-        ]
+            (df[column] > upper_bound),
+            column
+        ].sort_values()
 
-        print(f"{column}: {len(outliers)}")
+        print(f"\n{column}")
+        print(f"Q1: {Q1:.2f} | Q3: {Q3:.2f}")
+        print(f"Lower Bound: {lower_bound:.2f}")
+        print(f"Upper Bound: {upper_bound:.2f}")
+        print(f"Number of Potential Outliers: {len(outliers)}")
+
+        if not outliers.empty:
+            print("Outlier Values:")
+            print(outliers.tolist())
+        else:
+            print("No potential outliers found.")
+
 
 
 def analyze_relationships(df):
@@ -95,10 +116,15 @@ def analyze_relationships(df):
     print("\n--- Categorical Features vs Target ---")
     for column in categorical_columns:
         print(f"\n{column}:")
-        print(pd.crosstab(df[column], df[TARGET], normalize="index").round(2))
+        print(pd.crosstab(
+            df[column],
+            df[TARGET],
+            normalize="index"
+        ).round(2))
 
     print("\n--- Numerical Correlations ---")
     print(df[numerical_columns].corr())
+
 
 def analyze_inconsistencies(df):
     print("\n--- Numerical Range Validation ---")
@@ -117,16 +143,18 @@ def analyze_inconsistencies(df):
     }
 
     for column, (minimum, maximum) in ranges.items():
-        invalid = df[
-            (df[column] < minimum) | (df[column] > maximum)
-        ]
+        if column in df.columns:
+            invalid = df[
+                (df[column] < minimum) |
+                (df[column] > maximum)
+            ]
 
-        print(f"{column}: {len(invalid)} invalid values")
+            print(f"{column}: {len(invalid)} invalid values")
 
     print("\n--- Categorical Validation ---")
 
     expected_values = {
-        "Gender": ["Female", "Male", "Non-binary"],
+        "Gender": ["Female", "Male"],
         "Physical_Activity": ["Low", "Moderate", "High"],
         "Part_Time_Job": ["Yes", "No"],
         "Diet_Quality": ["Poor", "Average", "Good"],
@@ -135,20 +163,23 @@ def analyze_inconsistencies(df):
     }
 
     for column, expected in expected_values.items():
-        unexpected = df[
-            df[column].notna() & ~df[column].isin(expected)
-        ][column].unique()
+        if column in df.columns:
+            unexpected = df[
+                df[column].notna() &
+                ~df[column].isin(expected)
+            ][column].unique()
 
-        print(f"{column}: {unexpected}")
+            print(f"{column}: {unexpected}")
 
     print("\n--- Logical Validation ---")
 
-    invalid_years = df[
-        df["Year_of_Study"].notna()
-        & (df["Year_of_Study"] % 1 != 0)
-    ]
+    if "Year_of_Study" in df.columns:
+        invalid_years = df[
+            df["Year_of_Study"].notna() &
+            (df["Year_of_Study"] % 1 != 0)
+        ]
 
-    print("Non-integer study years:", len(invalid_years))
+        print("Non-integer study years:", len(invalid_years))
 
     if "Student_ID" in df.columns:
         print("Missing Student IDs:", df["Student_ID"].isnull().sum())
@@ -163,7 +194,10 @@ def profile_dataset(df):
     analyze_inconsistencies(df)
 
 
-
-if __name__ == "__main__":
+def main():
     df = load_dataset()
     profile_dataset(df)
+
+
+if __name__ == "__main__":
+    main()
